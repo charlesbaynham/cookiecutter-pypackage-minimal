@@ -4,6 +4,7 @@ import re
 
 from setuptools import find_packages
 from setuptools import setup
+import versioneer
 
 
 def read(filename):
@@ -14,10 +15,13 @@ def read(filename):
 
 
 setup(
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
+    
     name="{{ cookiecutter.package_name }}",
-    version="{{ cookiecutter.package_version }}",
+    
     url="{{ cookiecutter.package_url }}",
-    license='MIT',
+    license='None',
 
     author="{{ cookiecutter.author_name }}",
     author_email="{{ cookiecutter.author_email }}",
@@ -31,14 +35,9 @@ setup(
 
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
-        'License :: OSI Approved :: MIT License',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
     ],
 )

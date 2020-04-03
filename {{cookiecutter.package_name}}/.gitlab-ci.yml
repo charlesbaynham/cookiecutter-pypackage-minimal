@@ -1,0 +1,89 @@
+# Default image, if not specified
+image: "python:3.8"
+
+stages:
+  - Static Analysis
+  - Test
+  - Documentation
+
+### Setup cache ###
+# See https://docs.gitlab.com/ee/ci/caching/index.html
+#
+# Change pip's cache directory to be inside the project directory since we can
+# only cache local items.
+variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+    GIT_CLEAN_FLAGS: "-ffdx -e .cache/ -e venv/"
+
+# Pip's cache doesn't store the python packages
+# https://pip.pypa.io/en/stable/reference/pip_install/#caching
+#
+# If you want to also cache the installed packages, you have to install
+# them in a virtualenv and cache it as well.
+cache:
+  paths:
+    - .cache/pip
+    - venv/
+
+before_script:
+  - python --version
+  - pip install virtualenv
+  - virtualenv venv
+  - source venv/bin/activate
+
+### Linting ###
+
+flake8:
+  stage: Static Analysis
+  script:
+  - pip install flake8
+  - flake8 --exclude .git,__pycache__,tests,venv
+  allow_failure: true
+
+mypy:
+  stage: Static Analysis
+  script:
+  - pip install mypy
+  - mypy .
+  allow_failure: true
+
+### Tests ###
+
+.tox:
+  script:
+    - pwd
+    - ls -l
+    - export PYTHONPATH="$PYTHONPATH:."
+    - python -c "import sys;print(sys.path)"
+    - coverage run --omit tests -m tox
+    - coverage report
+  coverage: '/^TOTAL.+?(\d+\%)$/'
+
+tox-3.6:
+    extends: ".tox"
+    stage: "Test"
+    image: "python:3.6"
+
+tox-3.7:
+    extends: ".tox"
+    stage: "Test"
+    image: "python:3.7"
+
+tox-3.8:
+    extends: ".tox"
+    stage: "Test"
+    image: "python:3.8"
+
+### Documentation ###
+
+pages:
+  stage: Documentation
+  script:
+  - pip install -U sphinx
+  - sphinx-build -b html docs public
+  artifacts:
+    paths:
+    - public
+  rules:
+    - if: '$CI_PAGES_DOMAIN =~ /^.*gitlab.io/ && $CI_COMMIT_REF_NAME =~ /^master$|^v?\d{1,2}\.\d{1,2}$|.*docs.*/'
+      when: always
